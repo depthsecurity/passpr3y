@@ -13,10 +13,9 @@ headerDict = dict(item.split(': ') for item in map(str.strip, lineList[1:-2]))
 dataDict = dict(item.split('=') for item in map(str.strip, lineList[-1].split('&')))
 requestsFile.close()
 
-print len(r.content)
+r = requests.post("http://" + headerDict["Host"] + '/' + endPoint, \
+        headers=headerDict, data=dataDict, verify=False)
 
-# Load username file
-#r = requests.post("http://" + headerDict["Host"] + '/' + endPoint, \
-#        headers=headerDict, data=dataDict, verify=False)
+print len(r.content)
 
 
