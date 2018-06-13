@@ -8,7 +8,7 @@ import hashlib
 
 # Supporting variables/work
 proxies = {'http' : 'http://10.10.110.100:8080'}
-sleepTimeMinutes = 0.05
+sleepTimeMinutes = 0.001
 sleepTimeSeconds = int(round(sleepTimeMinutes*60))
 if not os.path.exists("logs"):
     os.makedirs("logs")
@@ -80,16 +80,33 @@ for password in passwordsList:
     # Write to file. Files are named with hashes that distinguish between unique responses.
     for key,value in responseDict.iteritems():
         fileOut = open("logs/" + date + '/' + tyme + '/' + key + ".html", 'w')
-        fileOut.write(str(value.request.url) + '\n\n')
-        for k2,v2 in value.request.headers.iteritems():
-            fileOut.write(k2 + ": " + v2 + "\n")
-        fileOut.write('\n' + str(value.request.body))
-        fileOut.write('\n' + "-"*80 + "\n\n")
+
+        fileOut.write('-'*80 + '\n')
+        fileOut.write("REQUEST")
+        fileOut.write('\n' + '-'*80 + '\n')
+
+        # Log request. If there were redirects, log the very first request made.
+        requestToLog = requests.Request()
+        if(value.history):
+            requestToLog = value.history[0].request
+        else:
+            requestToLog = value.request
+
+        fileOut.write(str(requestToLog.url) + '\n\n')
+        for k2,v2 in requestToLog.headers.iteritems():
+            fileOut.write(k2 + ": " + v2 + '\n')
+        fileOut.write('\n' + str(requestToLog.body) + '\n')
+
+        fileOut.write('\n' + '-'*80 + '\n')
+        fileOut.write("RESPONSE")
+        fileOut.write('\n' + '-'*80 + '\n')
+
+        # Log response
+        fileOut.write(str(value.status_code) + ' ' + value.reason + '\n')
         for k2,v2 in value.headers.iteritems():
-            fileOut.write(k2 + ": " + v2 + "\n")
-        fileOut.write(value.text)
+            fileOut.write(k2 + ": " + v2 + '\n')
+        fileOut.write('\n' + value.text)
+
         fileOut.close()
 
     time.sleep(sleepTimeSeconds)
-
-
