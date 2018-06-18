@@ -1,19 +1,35 @@
 #!/usr/bin/python
 
+import argparse
 import requests
 import os
 import sys
 import time
 import hashlib
 
+# Parse command line arguments
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument("--shotgun", action="store_true", help="Spray all users with no pause.")
+parser.add_argument("--duration", default="10", help="Total spray duration. Default is 2 hours.")
+
+args = parser.parse_args()
+
 # Supporting variables/work
 proxies = {'http' : 'http://10.10.110.100:8080'}
-sleepTimeMinutes = 0.001
+sleepTimeMinutes = 0.05
 sleepTimeSeconds = int(round(sleepTimeMinutes*60))
 if not os.path.exists("logs"):
     os.makedirs("logs")
 
+# Ensure spray time is appropriate
+if raw_input("You will be spraying every " \
+        + str(sleepTimeMinutes) + " minutes. Is that cool? (y/N) ").lower() != 'y':
+    sys.exit("Change spray time.")
+
 ################################################################################
+
 
 # Parse request file
 requestsFile = open('request.txt', 'r')
@@ -71,6 +87,8 @@ for password in passwordsList:
         # Store hash of response. Chance of collision but very minimal.
         responseDict[checksummer.hexdigest()] = response
 
+#    meaningFulResponses = extractMeaningfulResponses(responseDict)
+
     # Create file
     if not os.path.exists("logs/" + date):
         os.makedirs("logs/" + date)
@@ -81,11 +99,11 @@ for password in passwordsList:
     for key,value in responseDict.iteritems():
         fileOut = open("logs/" + date + '/' + tyme + '/' + key + ".html", 'w')
 
+        # Log request. If there were redirects, log the very first request made.
         fileOut.write('-'*80 + '\n')
         fileOut.write("REQUEST")
         fileOut.write('\n' + '-'*80 + '\n')
 
-        # Log request. If there were redirects, log the very first request made.
         requestToLog = requests.Request()
         if(value.history):
             requestToLog = value.history[0].request
