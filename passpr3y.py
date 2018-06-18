@@ -1,5 +1,8 @@
 #!/usr/bin/python
 
+# This program comes with no promises, warranties, or apologies. 
+# Use at your own risk and responsibility.
+
 import argparse
 import requests
 import os
@@ -12,13 +15,16 @@ import hashlib
 parser = argparse.ArgumentParser()
 
 parser.add_argument("--shotgun", action="store_true", help="Spray all users with no pause.")
-parser.add_argument("--duration", default="10", help="Total spray duration. Default is 2 hours.")
+parser.add_argument("--duration", default="120", help="Total spray duration in minutes. Default is 120 minutes.")
+parser.add_argument("--request", default="request.txt", help="Name of request file. Default is 'request.txt'.")
+parser.add_argument("--usernames", default="usernames.txt", help="Name of usernames file. Default is 'usernames.txt'.")
+parser.add_argument("--passwords", default="passwords.txt", help="Name of passwords file. Default is 'passwords.txt'.")
 
 args = parser.parse_args()
 
 # Supporting variables/work
 proxies = {'http' : 'http://10.10.110.100:8080'}
-sleepTimeMinutes = 0.05
+sleepTimeMinutes = int(round(float(args.duration)))
 sleepTimeSeconds = int(round(sleepTimeMinutes*60))
 if not os.path.exists("logs"):
     os.makedirs("logs")
@@ -32,7 +38,7 @@ if raw_input("You will be spraying every " \
 
 
 # Parse request file
-requestsFile = open('request.txt', 'r')
+requestsFile = open(args.request, 'r')
 lineList = requestsFile.readlines()
 endPoint = lineList[0].split(' ')[1].strip()
 headerDict = dict(item.split(': ') for item in map(str.strip, lineList[1:-2]))
@@ -42,12 +48,12 @@ if("USERPR3Y" not in dataDict.values() or "PASSPR3Y" not in dataDict.values()):
     sys.exit("Error: USERPR3Y or PASSPR3Y not present in POST request parameters.")
 
 # Parse usernames file
-usernamesFile = open('usernames.txt', 'r')
+usernamesFile = open(args.usernames, 'r')
 usernamesList = map(str.strip, usernamesFile.readlines())
 usernamesFile.close()
 
 # Parse passwords file
-passwordsFile = open('passwords.txt', 'r')
+passwordsFile = open(args.passwords, 'r')
 passwordsList = map(str.strip, passwordsFile.readlines())
 passwordsFile.close()
 
