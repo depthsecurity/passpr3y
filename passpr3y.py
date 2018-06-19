@@ -82,7 +82,7 @@ for password in passwordsList:
         dataDict[passwordKey] = password
         
         # Attempt login
-        print "Attemping " + username + ':' + password
+        print "Attempting " + username + ':' + password
         url = "http://" + headerDict["Host"] + endPoint
         #response = requests.post(url=url, headers=headerDict, data=dataDict, proxies=proxies, verify=False)
         response = requests.post(url=url, headers=headerDict, data=dataDict, verify=False)
