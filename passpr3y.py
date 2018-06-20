@@ -57,15 +57,6 @@ sleepTimeSeconds = int(args.duration)
 if not os.path.exists("logs"):
     os.makedirs("logs")
 
-# Ensure spray time is appropriate
-if raw_input("You will be spraying every " \
-        + str(sleepTimeSeconds) + " seconds in total. Is that cool? (y/N) ").lower() != 'y':
-    sys.exit("Change spray time.")
-
-if(args.shotgun):
-    if raw_input("You've selected the shotgun method. This will spray ALL users without pausing between each user. Opsec is questionable. Is that cool? (y/N) ").lower() != 'y':
-        sys.exit("Don't set shotgun flag.")
-
 ################################################################################
 
 
@@ -97,6 +88,17 @@ for key,value in dataDict.iteritems():
         usernameKey = key
     elif value == "PASSPR3Y":
         passwordKey = key
+
+sleepTime = float(sleepTimeSeconds)/float(len(usernamesList))
+
+# Ensure spray time is appropriate
+if(not args.shotgun):
+    if raw_input("You will be spraying against " + str(len(usernamesList)) + " users over the course of " + str(sleepTimeSeconds) + " seconds.\nThere is a " + str(sleepTime) + " second wait between each user attempt.\nIs that cool? (y/N) ").lower() != 'y':
+        sys.exit("Change spray time.")
+
+else:
+    if raw_input("You've selected the shotgun method. This will spray ALL users without pausing between each user.\nAfter spraying ALL users, there is a " + str(sleepTimeSeconds) + " second wait. Opsec is questionable.\nIs that cool? (y/N) ").lower() != 'y':
+        sys.exit("Don't set shotgun flag.")
 
 # Spray
 for password in passwordsList:
@@ -131,7 +133,6 @@ for password in passwordsList:
         responseDict[checksummer.hexdigest()] = response
 
         if(not args.shotgun and (password != passwordsList[-1] or username != usernamesList[-1])):
-            sleepTime = float(sleepTimeSeconds)/float(len(usernamesList))
             time.sleep(sleepTime)
 
     # Indicate number of unique responses (still basic approach)
