@@ -31,7 +31,8 @@ if not os.path.exists("logs"):
 
 # Ensure spray time is appropriate
 if raw_input("You will be spraying every " \
-        + str(sleepTimeSeconds) + " seconds. Is that cool? (y/N) ").lower() != 'y':
+        + str(sleepTimeSeconds) + " seconds in total. \
+The shotgun method will spray all at once, then wait. Is that cool? (y/N) ").lower() != 'y':
     sys.exit("Change spray time.")
 
 ################################################################################
@@ -95,7 +96,7 @@ for password in passwordsList:
         # Store hash of response. Chance of collision but very minimal.
         responseDict[checksummer.hexdigest()] = response
 
-        if(not args.shotgun):
+        if(not args.shotgun and password != passwordsList[-1] or username != usernamesList[-1]):
             sleepTime = float(sleepTimeSeconds)/float(len(usernamesList))
             time.sleep(sleepTime)
 
@@ -140,5 +141,5 @@ for password in passwordsList:
 
         fileOut.close()
 
-    if(args.shotgun):
+    if(args.shotgun and password is not passwordsList[-1]):
         time.sleep(sleepTimeSeconds)
