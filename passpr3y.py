@@ -14,6 +14,13 @@ import hashlib
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
+# Console colors
+G = '\033[92m'  # green
+Y = '\033[93m'  # yellow
+B = '\033[94m'  # blue
+R = '\033[91m'  # red
+W = '\033[0m'   # white
+
 # Parse command line arguments
 
 parser = argparse.ArgumentParser()
@@ -28,6 +35,22 @@ parser.add_argument("--passwords", default="passwords.txt", help="Name of passwo
 
 args = parser.parse_args()
 
+programheader = """
+__________                      __________       ________
+\______   \_____    ______ _____\______   \______\_____  \___.__.
+ |     ___/\__  \  /  ___//  ___/|     ___/\_  __ \_(__  <   |  |
+ |    |     / __ \_\___ \ \___ \ |    |     |  | \%s/       \___  |
+ |____|    (____  /____  >____  >|____|     |__| /______  / ____|
+                \/     \/     \/                        \/\/
+
+%s\tBrought to you by Faisal Tameesh (%s@DreadSystems%s)
+\tShoutout to the folks at %s@DepthSecurity%s
+"""%(R,W,R,W,B,W)
+
+print "\n" + "-"*65
+print programheader
+print "-"*65 + "\n"
+
 # Supporting variables/work
 # proxies = {'http' : 'http://10.10.110.100:8080'}
 sleepTimeSeconds = int(args.duration)
@@ -36,9 +59,12 @@ if not os.path.exists("logs"):
 
 # Ensure spray time is appropriate
 if raw_input("You will be spraying every " \
-        + str(sleepTimeSeconds) + " seconds in total. \
-The shotgun method will spray all at once, then wait. Is that cool? (y/N) ").lower() != 'y':
+        + str(sleepTimeSeconds) + " seconds in total. Is that cool? (y/N) ").lower() != 'y':
     sys.exit("Change spray time.")
+
+if(args.shotgun):
+    if raw_input("You've selected the shotgun method. This will spray ALL users without pausing between each user. Opsec is questionable. Is that cool? (y/N) ").lower() != 'y':
+        sys.exit("Don't set shotgun flag.")
 
 ################################################################################
 
