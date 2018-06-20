@@ -96,7 +96,7 @@ for password in passwordsList:
         # Store hash of response. Chance of collision but very minimal.
         responseDict[checksummer.hexdigest()] = response
 
-        if(not args.shotgun and password != passwordsList[-1] or username != usernamesList[-1]):
+        if(not args.shotgun and (password != passwordsList[-1] or username != usernamesList[-1])):
             sleepTime = float(sleepTimeSeconds)/float(len(usernamesList))
             time.sleep(sleepTime)
 
