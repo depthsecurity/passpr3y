@@ -18,6 +18,7 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 parser = argparse.ArgumentParser()
 
+parser.add_argument("--ssl", action="store_true", help="Use https.")
 parser.add_argument("--shotgun", action="store_true", help="Spray all users with no pause.")
 #parser.add_argument("--proxy", help="Specify proxy. Format 'http://127.0.0.1:8080'")
 parser.add_argument("--duration", default="7200", help="Total spray duration in seconds. Default is 7200 seconds.")
@@ -89,7 +90,10 @@ for password in passwordsList:
         
         # Attempt login
         print "\tAttempting " + username + ':' + password
-        url = "http://" + headerDict["Host"] + endPoint
+        if(args.ssl):
+            url = "https://" + headerDict["Host"] + endPoint
+        else:
+            url = "http://" + headerDict["Host"] + endPoint
         #response = requests.post(url=url, headers=headerDict, data=dataDict, proxies=proxies, verify=False)
         response = requests.post(url=url, headers=headerDict, data=dataDict, verify=False)
 
