@@ -10,6 +10,10 @@ import sys
 import time
 import hashlib
 
+# Get rid of dem warnings, this a gottam hak tool
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
 # Parse command line arguments
 
 parser = argparse.ArgumentParser()
