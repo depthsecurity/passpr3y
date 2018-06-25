@@ -11,6 +11,7 @@ This tool requires Python 3 and was written with Python 3.6 in mind. Refer to th
 
 ## Usage
 
+* Run `git clone https://github.com/depthsecurity/passpr3y.git` 
 * Run `chmod 755 passpr3y`.
 * Create a users file containing all users you'd like you spray. Name the file `usernames.txt`.
 * Create a passwords file containing all the passwords you'd like to attempt, such as Summer2018. Name the file `passwords.txt`.
@@ -23,5 +24,4 @@ Run `./passpr3y -h` to explore options.
 ## Disclaimers
 1. This program comes with no promises, warranties, or apologies. 
 2. Use this program at your own risk and responsibility.
-3. When this program is used aggressively, there is a good chance that you may lock out a large number of Active Directory accounts. Refer to number 2.
-4. Default settings of this program are meant to help prevent something like that from happening.
+3. When this program is used aggressively, there is a good chance that you may lock out a large number of Active Directory accounts. Refer to number 2. Default settings of this program are meant to help prevent something like that from happening.
