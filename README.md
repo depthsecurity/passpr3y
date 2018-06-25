@@ -17,10 +17,10 @@ This tool requires Python 3 and was written with Python 3.6 in mind. Refer to th
 * Create a requests file that uses the Burp proxy request format. Simply copy over the request to a file called `request.txt`.
 * Run `./passpr3y -ssl --duration=3600` if you'd like to spray every hour. Default is 7200 for every two hours.
 
-##Additional Info
+## Additional Info
 Run `./passpr3y -h` to explore options.
 
-##Disclaimers
+## Disclaimers
 1. This program comes with no promises, warranties, or apologies. 
 2. Use this program at your own risk and responsibility.
 3. When this program is used aggressively, there is a good chance that you may lock out a large number of Active Directory accounts. Refer to number 2.
