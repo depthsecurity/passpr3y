@@ -16,6 +16,8 @@ This tool requires Python 3 and was written with Python 3.6 in mind. Refer to th
 * Create a users file containing all users you'd like you spray. Name the file `usernames.txt`.
 * Create a passwords file containing all the passwords you'd like to attempt, such as Summer2018. Name the file `passwords.txt`.
 * Create a requests file that uses the Burp proxy request format. Simply copy over the request to a file called `request.txt`.
+* In request.txt, replace the username parameter you would like to spray with `USERPR3Y`.
+* In request.txt, replace the password parameter you would like to spray with `PASSPR3Y`.
 * Run `./passpr3y --ssl --duration=3600` if you'd like to spray every hour. Default is 7200 for every two hours.
 
 ## Additional Info
