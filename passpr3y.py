@@ -90,10 +90,11 @@ class Passpr3y:
         randomPass = ''.join(random.choice(string.ascii_lowercase) for _ in range(12))
         print("%sPerforming test request to benchmark failed attempt...%s" % (Y,W))
 
-        response = self.performRequest(randomUser, randomPass)
+        self.test_response = self.performRequest(randomUser, randomPass)
+        self.test_hexDigest = self.getHashFromResponse(self.test_response)
 
-        if(response.status_code == 400):
-            print("%sTest request returned status code " % (R) + str(response.status_code) + "%s" % (W))
+        if(self.test_response.status_code == 400):
+            print("%sTest request returned status code " % (R) + str(self.test_response.status_code) + "%s" % (W))
             if(input("Are you sure you want to continue? (y/N) ") != 'y'):
                 sys.exit("Unsatisfactory HTTP response code.")
         else:
@@ -113,12 +114,32 @@ class Passpr3y:
             for username in self.usernameList:
                 response = self.performRequest(username, password)
 
-                # Create hash of response
-                checksummer = hashlib.md5()
-                checksummer.update(response.content)
+                hexDigest = self.getHashFromResponse(response)
+
+                # Check if hash matches test response, if not, print request and response
+                if(hexDigest != self.test_hexDigest):
+                    print("%sAnomalous response detected, might be a hit%s" % (R,W))
+                    print('\n' + '-'*80 + '\n')
+                    print("%sREQUEST BODY%s" % (Y,W)) 
+                    if(response.history):
+                        print(response.history[0].request.body)
+                    else:
+                        print(response.request.body)
+                    print('\n' + '-'*80 + '\n')
+                    print("%sSTATUS CODE%s" % (Y,W))
+                    if(response.history):
+                        print("%sREDIRECTED%s" % (Y,W))
+                    print(response.status_code)
+                    print('\n' + '-'*80 + '\n')
+                    print("%sRESPONSE HEADERS%s" % (Y,W))
+                    print(response.headers)
+                    print('\n' + '-'*80 + '\n')
+                    print("%sRESPONSE BODY%s" % (Y,W))
+                    print(response.text)
+                    print('\n' + '-'*80 + '\n')
 
                 # Store hash of response. Chance of collision but very minimal.
-                responseDict[checksummer.hexdigest()] = response
+                responseDict[hexDigest] = response
 
                 if(not self.shotgun and (password != self.passwordList[-1] or username != self.usernameList[-1])):
                     time.sleep(self.slowSleepTime)
@@ -152,6 +173,7 @@ class Passpr3y:
                     fileOut.write(k2 + ": " + v2 + '\n')
                 fileOut.write('\n' + str(requestToLog.body) + '\n')
 
+                # Log response
                 if(value.history):
                     for historyItem in value.history:
                         fileOut.write('\n' + '-'*80 + '\n')
@@ -167,7 +189,6 @@ class Passpr3y:
                 fileOut.write("RESPONSE")
                 fileOut.write('\n' + '-'*80 + '\n')
 
-                # Log response
                 fileOut.write(str(value.status_code) + ' ' + value.reason + '\n')
                 for k2,v2 in value.headers.items():
                     fileOut.write(k2 + ": " + v2 + '\n')
@@ -177,6 +198,12 @@ class Passpr3y:
 
             if(self.shotgun and password is not self.passwordList[-1]):
                 time.sleep(self.shotgunSleepTime)
+
+    def getHashFromResponse(self, response):
+        # Create hash of response
+        checksummer = hashlib.md5()
+        checksummer.update(response.content)
+        return checksummer.hexdigest()
 
     def performRequest(self, username, password):
         # Load injection points
