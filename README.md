@@ -1,15 +1,15 @@
-#passpr3y
+# passpr3y
 
-##Overview
+## Overview
 
 This is a password spraying tool. What differentiates this from a traditional bruteforce tool is that one password is used against a list of users. This is also known as a horizontal login attack.
 
 There are measures built-in against locking out accounts, particularly in cases where Active Directory accounts are tested.
 
-##Requirements
+## Requirements
 This tool requires Python 3 and was written with Python 3.6 in mind. Refer to the file header for any needed modules.
 
-##Usage
+## Usage
 
 * Run `chmod 755 passpr3y`.
 * Create a users file containing all users you'd like you spray. Name the file `usernames.txt`.
