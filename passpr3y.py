@@ -31,6 +31,11 @@ W = '\033[0m'   # white
 
 class Passpr3y:
     def __init__(self, requestFile, usernameFile, passwordFile, duration=7200, ssl=False, shotgun=False, proxy=None):
+
+        # Check python version
+        if sys.version_info[0] < 3:
+            raise Exception("Must be using Python 3")
+
         self.requestFile = requestFile
         self.usernameFile = usernameFile
         self.passwordFile = passwordFile
