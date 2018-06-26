@@ -19,7 +19,7 @@ import random
 import string
 import pprint
 
-# INSTALL this package using "pip install git+https://github.com/phohenecker/stream-to-logger"
+# INSTALL this package using "pip3 install git+https://github.com/phohenecker/stream-to-logger"
 # This helps redirect all print statements to a file for later examination
 import streamtologger
 streamtologger.redirect(target="./passpr3y_output.txt")
