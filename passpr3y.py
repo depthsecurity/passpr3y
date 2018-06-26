@@ -19,6 +19,11 @@ import random
 import string
 import pprint
 
+# INSTALL this package using "pip install git+https://github.com/phohenecker/stream-to-logger"
+# This helps redirect all print statements to a file for later examination
+import streamtologger
+streamtologger.redirect(target="./passpr3y_output.txt")
+
 # Get rid of dem warnings, this a gottam hak tool
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
