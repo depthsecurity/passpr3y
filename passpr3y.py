@@ -17,6 +17,7 @@ import time
 import hashlib
 import random
 import string
+import pprint
 
 # Get rid of dem warnings, this a gottam hak tool
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
@@ -123,25 +124,25 @@ class Passpr3y:
 
                 # Check if hash matches test response, if not, print request and response
                 if(hexDigest != self.test_hexDigest):
-                    print("%sAnomalous response detected, might be a hit%s" % (R,W))
-                    print('\n' + '-'*80 + '\n')
+                    print("\n%sAnomalous response detected, might be a hit%s" % (R,W))
+                    print('-'*80)
                     print("%sREQUEST BODY%s" % (Y,W)) 
                     if(response.history):
                         print(response.history[0].request.body)
                     else:
                         print(response.request.body)
-                    print('\n' + '-'*80 + '\n')
+                    print('-'*80)
                     print("%sSTATUS CODE%s" % (Y,W))
                     if(response.history):
                         print("%sREDIRECTED%s" % (Y,W))
                     print(response.status_code)
-                    print('\n' + '-'*80 + '\n')
+                    print('-'*80)
                     print("%sRESPONSE HEADERS%s" % (Y,W))
-                    print(response.headers)
-                    print('\n' + '-'*80 + '\n')
+                    pprint.pprint(dict(response.headers))
+                    print('-'*80)
                     print("%sRESPONSE BODY%s" % (Y,W))
-                    print(response.text)
-                    print('\n' + '-'*80 + '\n')
+                    print("Check file with hash: " + str(hexDigest))
+                    print('-'*80)
 
                 # Store hash of response. Chance of collision but very minimal.
                 responseDict[hexDigest] = response
