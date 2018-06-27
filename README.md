@@ -2,9 +2,7 @@
 
 ## Overview
 
-This is a password spraying tool. What differentiates this from a traditional bruteforce tool is that one password is used against a list of users. This is also known as a horizontal login attack.
-
-There are measures built-in against locking out accounts, particularly in cases where Active Directory accounts are tested.
+This is a fire-and-forget long-running password spraying tool. You hand it a list of usernames and passwords and walk away. It will perform a horizontal login attack while keeping in mind lockout times, erroneous responses, etc... Set it up on your attack box at the beginning of an assessment and check back for creds gradually over time. Output is intended to be easy to read through and grep. Focus is on simplicity.
 
 ## Requirements
 This tool requires Python 3 and was written with Python 3.6 in mind. Refer to the file header for any needed modules.
