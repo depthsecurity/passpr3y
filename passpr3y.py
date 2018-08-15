@@ -36,7 +36,7 @@ R = '\033[91m'  # red
 W = '\033[0m'   # white
 
 class Passpr3y:
-    def __init__(self, requestFile, usernameFile, passwordFile, duration=7200, ssl=False, shotgun=False, proxy=None):
+    def __init__(self, requestFile, usernameFile, passwordFile, duration=7200, ssl=False, shotgun=False, proxy=None, ntlm=False):
 
         # Check python version
         if sys.version_info[0] < 3:
@@ -49,6 +49,7 @@ class Passpr3y:
         self.ssl = ssl
         self.shotgun = shotgun
         self.proxy = { 'http' : proxy, 'https' : proxy}
+        self.ntlm = ntlm
 
         # Create log directory
         if not os.path.exists("logs"):
@@ -111,7 +112,7 @@ class Passpr3y:
         else:
             print("%sTest request did not return 400, moving on.%s\n" % (G,W))
 
-    def performSpray(self, duration=7200, shotgun=False, ssl=True):
+    def performSpray(self):
         # Spray
         for password in self.passwordList:
             # Get time right before spray
@@ -152,6 +153,7 @@ class Passpr3y:
                 # Store hash of response. Chance of collision but very minimal.
                 responseDict[hexDigest] = response
 
+                # Don't sleep after very last spray
                 if(not self.shotgun and (password != self.passwordList[-1] or username != self.usernameList[-1])):
                     time.sleep(self.slowSleepTime)
 
@@ -266,6 +268,7 @@ if __name__ == '__main__':
     parser.add_argument("--ssl", action="store_true", help="Use https.")
     parser.add_argument("--shotgun", action="store_true", help="Spray all users with no pause.")
     parser.add_argument("--proxy", help="Specify proxy. Format: 'http://127.0.0.1:8080'")
+    parser.add_argument("--ntlm", action="store_true", help="Use NTLM. Requires username in 'domain/username' format.")
 
     args = parser.parse_args()
 
@@ -291,7 +294,8 @@ if __name__ == '__main__':
             duration=args.duration, \
             shotgun=args.shotgun, \
             ssl=args.ssl, \
-            proxy=args.proxy)
+            proxy=args.proxy, \
+            ntlm=args.ntlm)
 
     pr3y.showWarning()
 
