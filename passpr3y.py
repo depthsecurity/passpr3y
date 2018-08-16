@@ -149,7 +149,7 @@ class Passpr3y:
 
                 # Check if hash matches test response, if not, print request and response
                 if(hexDigest != self.test_hexDigest):
-                    print("\t(" + str(idx) + "/" + str(len(self.usernameList)) + ') ' + "%s" % (G) + username + ':' + password + "%s" % (W) + " --- Anomalous response, check file " + hexDigest)
+                    print("\t(" + str(idx) + "/" + str(len(self.usernameList)) + ') ' + "%s" % (G) + username + ':' + password + "%s" % (W) + " --- Anomalous response, check log file " + hexDigest)
                     print(username + ":" + password, file=open(PASSPR3Y_HITS_FILE, "a"))
                 else:
                     print("\t(" + str(idx) + "/" + str(len(self.usernameList)) + ') ' + username + ':' + password)
