@@ -294,7 +294,7 @@ if __name__ == '__main__':
     parser.add_argument("--ssl", action="store_true", help="Use https.")
     parser.add_argument("--shotgun", action="store_true", help="Spray all users with no pause.")
     parser.add_argument("--proxy", help="Specify proxy. Format: 'http://127.0.0.1:8080'")
-    parser.add_argument("--ntlm", action="store_true", help="Use NTLM. Requires username in 'domain/username' format.")
+    parser.add_argument("--ntlm", action="store_true", help="Use NTLM.")
 
     args = parser.parse_args()
 
