@@ -17,6 +17,10 @@ This tool requires Python 3 and was written with Python 3.6 in mind. Refer to th
 * In request.txt, replace the username parameter you would like to spray with `USERPR3Y`.
 * In request.txt, replace the password parameter you would like to spray with `PASSPR3Y`.
 * Run `./passpr3y --ssl --duration=3600` if you'd like to spray every hour. Default is 7200 seconds (two hours).
+* On successful output, `watch passpr3y_hits.txt` for hits as time goes on.
+
+### NTLM
+* For NTLM requests, make sure your request file contains the NTLM request in Burp format and you specify the `--ntlm` flag when running the script. (And `--ssl` if you need it.)
 
 ## Additional Info
 Run `./passpr3y -h` to explore options.
