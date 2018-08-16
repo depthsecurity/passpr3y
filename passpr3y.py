@@ -36,6 +36,9 @@ B = '\033[94m'  # blue
 R = '\033[91m'  # red
 W = '\033[0m'   # white
 
+# File to store hits
+PASSPR3Y_HITS_FILE = "passpr3y_hits.txt"
+
 class Passpr3y:
     def __init__(self, requestFile, usernameFile, passwordFile, duration=7200, ssl=False, shotgun=False, proxy=None, ntlm=False):
 
@@ -136,7 +139,7 @@ class Passpr3y:
             print("Password " + str(self.passwordList.index(password) + 1) + " of " + str(len(self.passwordList)))
 
             # Perform spray
-            for username in self.usernameList:
+            for idx, username in enumerate(self.usernameList, start=1):
                 if(self.ntlm):
                     response = self.performNTLMRequest(username, password)
                 else:
@@ -146,25 +149,10 @@ class Passpr3y:
 
                 # Check if hash matches test response, if not, print request and response
                 if(hexDigest != self.test_hexDigest):
-                    print("\n%sAnomalous response detected, might be a hit%s" % (R,W))
-                    print('-'*80)
-                    print("%sREQUEST BODY%s" % (Y,W)) 
-                    if(response.history):
-                        print(response.history[0].request.body)
-                    else:
-                        print(response.request.body)
-                    print('-'*80)
-                    print("%sSTATUS CODE%s" % (Y,W))
-                    if(response.history):
-                        print("%sREDIRECTED%s" % (Y,W))
-                    print(response.status_code)
-                    print('-'*80)
-                    print("%sRESPONSE HEADERS%s" % (Y,W))
-                    pprint.pprint(dict(response.headers))
-                    print('-'*80)
-                    print("%sRESPONSE BODY%s" % (Y,W))
-                    print("Check file with hash: " + str(hexDigest))
-                    print('-'*80)
+                    print("\t(" + str(idx) + "/" + str(len(self.usernameList)) + ') ' + "%s" % (G) + username + ':' + password + "%s" % (W) + " --- Anomalous response, check file " + hexDigest)
+                    print(username + ":" + password, file=open(PASSPR3Y_HITS_FILE, "a"))
+                else:
+                    print("\t(" + str(idx) + "/" + str(len(self.usernameList)) + ') ' + username + ':' + password)
 
                 # Store hash of response. Chance of collision but very minimal.
                 responseDict[hexDigest] = response
@@ -240,7 +228,7 @@ class Passpr3y:
         self.dataDict[self.passwordKey] = password
         
         # Attempt login
-        print("\tAttempting " + username + ':' + password)
+#        print("\tAttempting " + username + ':' + password)
         if(self.ssl):
             url = "https://" + self.headerDict["Host"] + self.endPoint
         else:
@@ -260,7 +248,7 @@ class Passpr3y:
 
     def performNTLMRequest(self, username, password):
         # Attempt NTLM login
-        print("\t Attempting NTLM " + username + ':' + password)
+#        print("\t Attempting NTLM " + username + ':' + password)
         if(self.ssl):
             url = "https://" + self.headerDict["Host"] + '/'
         else:
