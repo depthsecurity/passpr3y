@@ -36,8 +36,11 @@ B = '\033[94m'  # blue
 R = '\033[91m'  # red
 W = '\033[0m'   # white
 
-# File to store hits
+# File to store hits, create if missing
 PASSPR3Y_HITS_FILE = "passpr3y_hits.txt"
+if not os.access(PASSPR3Y_HITS_FILE, os.R_OK):
+    with open(PASSPR3Y_HITS_FILE, 'a'):
+        os.utime(PASSPR3Y_HITS_FILE, None)
 
 class Passpr3y:
     def __init__(self, requestFile, usernameFile, passwordFile, duration=7200, ssl=False, shotgun=False, proxy=None, ntlm=False):
