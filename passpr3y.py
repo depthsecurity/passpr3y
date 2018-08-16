@@ -116,14 +116,14 @@ class Passpr3y:
         else:
             self.test_response = self.performNTLMRequest(randomUser, randomPass)
 
-            self.test_hexDigest = self.getHashFromResponse(self.test_response)
+        self.test_hexDigest = self.getHashFromResponse(self.test_response)
 
-            if(self.test_response.status_code == 400):
-                print("%sTest request returned status code " % (R) + str(self.test_response.status_code) + "%s" % (W))
-                if(input("Are you sure you want to continue? (y/N) ") != 'y'):
-                    sys.exit("Unsatisfactory HTTP response code.")
-            else:
-                print("%sTest request did not return 400, moving on.%s\n" % (G,W))
+        if(self.test_response.status_code == 400):
+            print("%sTest request returned status code " % (R) + str(self.test_response.status_code) + "%s" % (W))
+            if(input("Are you sure you want to continue? (y/N) ") != 'y'):
+                sys.exit("Unsatisfactory HTTP response code.")
+        else:
+            print("%sTest request did not return 400, moving on.%s\n" % (G,W))
 
     def performSpray(self):
         # Spray
