@@ -265,7 +265,6 @@ class Passpr3y:
             url = "https://" + self.headerDict["Host"] + '/'
         else:
             url = "http://" + self.headerDict["Host"] + '/'
-        print("ATTEMPTING")
         
         return requests.get(url, proxies=self.proxy, verify=False, auth=HttpNtlmAuth(username, password))
 
