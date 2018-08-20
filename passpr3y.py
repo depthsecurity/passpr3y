@@ -186,7 +186,12 @@ class Passpr3y:
                     # Store hash of response. Chance of collision but very minimal.
                     responseDict[hexDigest] = response
                 else:
-                    response = self.performSMBRequest(self.domain, username, password, self.ip)
+                    try:
+                        response = self.performSMBRequest(self.domain, username, password, self.ip)
+                    except(Exception e):
+                        print("\tSMB exception: " + e.strerror)
+                        continue
+
                     
                     if response:
                         print("\t(" + str(idx) + "/" + str(len(self.usernameList)) + ') ' + "%s" % (G) + self.domain + '\\' + username + ':' + password + "%s" % (W) + " --- SMB login successful")
