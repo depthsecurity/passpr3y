@@ -74,7 +74,7 @@ class Passpr3y:
             os.makedirs("logs")
 
         # Parse web request file, preserve order of headers
-        if(not self.ntlm):
+        if not self.ntlm and not self.smb :
             requestFile = open(self.requestFile, 'r')
             lineList = requestFile.readlines()
             newlineIndex = lineList.index('\n')
@@ -84,7 +84,7 @@ class Passpr3y:
             requestFile.close()
             if("USERPR3Y" not in self.dataDict.values() or "PASSPR3Y" not in self.dataDict.values()):
                 sys.exit("Error: USERPR3Y or PASSPR3Y not present in POST request parameters.")
-        else:
+        elif self.ntlm:
             requestFile = open(self.requestFile, 'r')
             lineList = requestFile.readlines()
             self.headerDict = collections.OrderedDict(item.split(': ') for item in map(str.strip, lineList[1:-1]))
