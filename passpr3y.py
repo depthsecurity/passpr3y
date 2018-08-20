@@ -106,7 +106,7 @@ class Passpr3y:
         self.slowSleepTime = float(self.shotgunSleepTime)/float(len(self.usernameList))
 
         # Get injection points
-        if(not self.ntlm):
+        if(not self.ntlm and not self.smb):
             for key,value in self.dataDict.items():
                 if value == "USERPR3Y":
                     self.usernameKey = key
