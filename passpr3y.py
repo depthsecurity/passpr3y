@@ -1,4 +1,4 @@
-#!/usr/bin/python3.6
+#!/usr/bin/python3
 
 # 1. This program comes with no promises, warranties, or apologies. 
 # 2. Use this program at your own risk and responsibility.
@@ -10,6 +10,7 @@
 
 import argparse
 import collections
+from typing import Collection, List
 import requests
 from requests_ntlm import HttpNtlmAuth
 from smb.SMBConnection import SMBConnection
@@ -30,8 +31,8 @@ import streamtologger
 streamtologger.redirect(target="./passpr3y_output.txt")
 
 # Get rid of dem warnings, this a gottam hak tool
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Disable logging from pysmb
 logging.getLogger('SMB').setLevel(logging.CRITICAL)
@@ -49,6 +50,15 @@ PASSPR3Y_HITS_FILE = "passpr3y_hits.txt"
 if not os.access(PASSPR3Y_HITS_FILE, os.R_OK):
     with open(PASSPR3Y_HITS_FILE, 'a'):
         os.utime(PASSPR3Y_HITS_FILE, None)
+
+def get_dict_from_headers(lineList: List) -> collections.OrderedDict:
+    d = collections.OrderedDict()
+    for line in map(str.strip, lineList[1:-1]):
+        if line != "":
+            header, value = line.split(": ")
+            d[header] = value
+    return d
+
 
 class Passpr3y:
     def __init__(self, requestFile, usernameFile, passwordFile, duration=7200, ssl=False, shotgun=False, proxy=None, ntlm=False, smb=False, ip="127.0.0.1", domain="."):
@@ -87,7 +97,8 @@ class Passpr3y:
         elif self.ntlm:
             requestFile = open(self.requestFile, 'r')
             lineList = requestFile.readlines()
-            self.headerDict = collections.OrderedDict(item.split(': ') for item in map(str.strip, lineList[1:-1]))
+            # self.headerDict = collections.OrderedDict(item.split(': ') for item in map(str.strip, lineList[1:-1]))
+            self.headerDict = get_dict_from_headers(lineList)
             requestFile.close()
 
 
@@ -188,7 +199,7 @@ class Passpr3y:
                 else:
                     try:
                         response = self.performSMBRequest(self.domain, username, password, self.ip)
-                    except(Exception e):
+                    except Exception as e:
                         print("\tSMB exception: " + e.strerror)
                         continue
 
