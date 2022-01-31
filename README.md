@@ -5,15 +5,16 @@
 This is a fire-and-forget long-running password spraying tool. You hand it a list of usernames and passwords and walk away. It will perform a horizontal login attack while keeping in mind lockout times, erroneous responses, etc... Set it up on your attack box at the beginning of an assessment and check back for creds gradually over time. Output is intended to be easy to read through and grep. Focus is on simplicity.
 
 ## Requirements
-This tool requires Python 3 and was written with Python 3.6 in mind. Refer to the file header for any needed modules.
+This tool requires Python 3.
 
 ## Usage
 
-* Run `git clone https://github.com/primal0xF7/passpr3y.git`.
+* Run `git clone https://github.com/depthsecurity/passpr3y.git`.
 * Run `chmod 755 passpr3y`.
-* Create a users file containing all users you'd like you spray. Name the file `usernames.txt`.
+* `pip install -r requirements.txt`
+* Create a users file containing all users you'd like you spray. Name the file `usernames.txt`. The usernames should be in the format `domain\username`.
 * Create a passwords file containing all the passwords you'd like to attempt, such as Summer2018. Name the file `passwords.txt`.
-* Create a requests file straight from Burp's proxy 'request' tab. Simply copy over the request to a file called `request.txt`.
+* Create a requests file that uses the Burp proxy request format. Simply copy over the request to a file called `request.txt`.
 * In request.txt, replace the username parameter you would like to spray with `USERPR3Y`.
 * In request.txt, replace the password parameter you would like to spray with `PASSPR3Y`.
 * Run `./passpr3y --ssl --duration=3600` if you'd like to spray every hour. Default is 7200 seconds (two hours).
