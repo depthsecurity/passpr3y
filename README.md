@@ -9,7 +9,7 @@ This tool requires Python 3 and was written with Python 3.6 in mind. Refer to th
 
 ## Usage
 
-* Run `git clone https://github.com/depthsecurity/passpr3y.git`.
+* Run `git clone https://github.com/primal0xF7/passpr3y.git`.
 * Run `chmod 755 passpr3y`.
 * Create a users file containing all users you'd like you spray. Name the file `usernames.txt`.
 * Create a passwords file containing all the passwords you'd like to attempt, such as Summer2018. Name the file `passwords.txt`.
